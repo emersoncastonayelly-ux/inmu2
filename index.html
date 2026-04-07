@@ -4,6 +4,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Sistema de Control de Asistencia INMU - PWA instalable.">
+  <meta name="theme-color" content="#0C447C">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="logo.jpg">
   <title>Registro de Asistencia — INMU</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
@@ -707,6 +713,7 @@
     <button class="btn-nav" style="background:#BA7517" onclick="pedirPasswordNuevo()">➕ Nuevo Alumno</button>
     <button class="btn-nav" style="background:var(--green-600)" onclick="pedirPasswordSub()">📊 Sub-Dirección</button>
     <button class="btn-nav" style="background:#4B77FF; color:white;" onclick="mostrarNotificaciones()">🔔 Notificaciones</button>
+    <button id="btn-install-pwa" class="btn-nav" style="background:#0C447C; display:none;" onclick="mostrarInstallPrompt()">📥 Instalar app</button>
     <button class="btn-nav" style="background:var(--blue-600);" onclick="cambiarVista('docente')">✍️ Pasar Lista</button>
   </div>
 </div>
@@ -2686,6 +2693,39 @@
       actualizarUltimaActividad(); // Inicializar actividad
       iniciarNotificacionesWeb();
   });
+
+  if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js')
+          .then(reg => console.log('Service Worker registrado:', reg.scope))
+          .catch(err => console.log('Error registrando Service Worker:', err));
+  }
+
+  let deferredInstallPrompt = null;
+
+  window.addEventListener('beforeinstallprompt', (event) => {
+      event.preventDefault();
+      deferredInstallPrompt = event;
+      const installButton = document.getElementById('btn-install-pwa');
+      if (installButton) {
+          installButton.style.display = 'block';
+      }
+  });
+
+  async function mostrarInstallPrompt() {
+      if (!deferredInstallPrompt) return;
+      deferredInstallPrompt.prompt();
+      const choiceResult = await deferredInstallPrompt.userChoice;
+      if (choiceResult.outcome === 'accepted') {
+          console.log('Usuario aceptó instalar la PWA.');
+      } else {
+          console.log('Usuario rechazó instalar la PWA.');
+      }
+      deferredInstallPrompt = null;
+      const installButton = document.getElementById('btn-install-pwa');
+      if (installButton) {
+          installButton.style.display = 'none';
+      }
+  }
 
   function mostrarModalListado(html) {
       // Eliminar overlay previo si existe
